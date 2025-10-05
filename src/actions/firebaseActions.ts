@@ -10,9 +10,7 @@ import {
   getDoc,
   updateDoc,
   deleteDoc,
-  onSnapshot,
   orderBy,
-  limit,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/config/firebase";
@@ -370,6 +368,7 @@ export async function getCrosswordPuzzle(
 
       // Remove answers from clues before sending to client
       puzzle.clues = puzzle.clues.map(clue => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { answer: _, ...clueWithoutAnswer } = clue;
         return clueWithoutAnswer;
       });    return puzzle;
@@ -394,6 +393,7 @@ export async function getAllCrosswordPuzzles(): Promise<CrosswordPuzzle[]> {
 
       // Remove answers from clues before sending to client
       puzzle.clues = puzzle.clues.map(clue => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { answer: _, ...clueWithoutAnswer } = clue;
         return clueWithoutAnswer;
       });

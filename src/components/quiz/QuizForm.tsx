@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Control, FieldErrors, UseFormRegister } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { QuizSchema, QuizFormType } from "@/types";
 import { createQuiz } from "@/actions/firebaseActions";
@@ -84,8 +84,8 @@ export default function QuizForm({ onQuizCreated, onCancel }: QuizFormProps) {
    } else {
     setError("Failed to create quiz. Please try again.");
    }
-  } catch (err: any) {
-   setError(err.message || "An error occurred while creating the quiz");
+  } catch (err: unknown) {
+   setError(err instanceof Error ? err.message : "An error occurred while creating the quiz");
    console.error(err);
   } finally {
    setIsLoading(false);
@@ -103,9 +103,7 @@ export default function QuizForm({ onQuizCreated, onCancel }: QuizFormProps) {
   });
  };
 
- const addAnswer = (questionIndex: number, answers: any) => {
-  answers.append({ text: "", isCorrect: false });
- };
+
 
  return (
   <div className="max-w-4xl mx-auto bg-white p-8 ">
@@ -219,9 +217,9 @@ export default function QuizForm({ onQuizCreated, onCancel }: QuizFormProps) {
 
 interface QuestionFormProps {
  questionIndex: number;
- register: any;
- control: any;
- errors: any;
+ register: UseFormRegister<QuizFormType>;
+ control: Control<QuizFormType>;
+ errors: FieldErrors<QuizFormType>;
  onRemove: () => void;
  canRemove: boolean;
 }

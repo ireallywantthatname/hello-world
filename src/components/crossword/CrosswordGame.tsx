@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { CrosswordPuzzle, CrosswordAttempt, CrosswordClue } from "@/types";
+import { useState, useEffect, useCallback } from "react";
+import { CrosswordPuzzle, CrosswordClue, CrosswordAttempt } from "@/types";
 import { getCrosswordPuzzle, submitCrosswordAttempt } from "@/actions/firebaseActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { createCrosswordGrid, getClueNumbers } from "@/data/crosswordData";
@@ -15,16 +15,11 @@ interface CrosswordGameProps {
 export default function CrosswordGame({ puzzleId, onComplete, onExit }: CrosswordGameProps) {
   const [puzzle, setPuzzle] = useState<CrosswordPuzzle | null>(null);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
-  const [selectedClue, setSelectedClue] = useState<CrosswordClue | null>(null);
   const [startTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    loadPuzzle();
-  }, [puzzleId]);
-
-  const loadPuzzle = async () => {
+  const loadPuzzle = useCallback(async () => {
     try {
       const fetchedPuzzle = await getCrosswordPuzzle(puzzleId);
       if (fetchedPuzzle) {
@@ -39,7 +34,11 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
     } catch (err) {
       console.error("Error loading puzzle:", err);
     }
-  };
+  }, [puzzleId]);
+
+  useEffect(() => {
+    loadPuzzle();
+  }, [loadPuzzle]);
 
   const handleAnswerChange = (clueId: string, answer: string) => {
     setUserAnswers(prev => ({

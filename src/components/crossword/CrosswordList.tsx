@@ -30,16 +30,6 @@ export default function CrosswordList({ onStartPuzzle }: CrosswordListProps) {
         }
     };
 
-
-
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-        }).format(date);
-    };
-
     if (isLoading) {
         return (
             <div className="flex justify-center items-center py-12">

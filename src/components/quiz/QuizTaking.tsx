@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Quiz, QuizAttempt } from "@/types";
 import { getQuiz, submitQuizAttempt } from "@/actions/firebaseActions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,32 +20,7 @@ export default function QuizTaking({ quizId, onQuizComplete, onExit }: QuizTakin
     const [startTime] = useState(Date.now());
     const { user } = useAuth();
 
-    useEffect(() => {
-        loadQuiz();
-    }, [quizId]);
-
-    useEffect(() => {
-        if (quiz?.duration) {
-            setTimeLeft(quiz.duration * 60); // Convert minutes to seconds
-        }
-    }, [quiz]);
-
-    useEffect(() => {
-        if (timeLeft === null) return;
-
-        if (timeLeft <= 0) {
-            handleSubmitQuiz();
-            return;
-        }
-
-        const timer = setInterval(() => {
-            setTimeLeft(prev => (prev ? prev - 1 : 0));
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [timeLeft]);
-
-    const loadQuiz = async () => {
+    const loadQuiz = useCallback(async () => {
         try {
             const fetchedQuiz = await getQuiz(quizId);
             if (fetchedQuiz) {
@@ -54,16 +29,13 @@ export default function QuizTaking({ quizId, onQuizComplete, onExit }: QuizTakin
         } catch (err) {
             console.error("Error loading quiz:", err);
         }
-    };
+    }, [quizId]);
 
-    const handleAnswerSelect = (questionId: string, answerId: string) => {
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: answerId,
-        }));
-    };
+    useEffect(() => {
+        loadQuiz();
+    }, [loadQuiz]);
 
-    const calculateScore = () => {
+    const calculateScore = useCallback(() => {
         if (!quiz) return { score: 0, maxScore: 0 };
 
         let score = 0;
@@ -82,9 +54,9 @@ export default function QuizTaking({ quizId, onQuizComplete, onExit }: QuizTakin
         });
 
         return { score, maxScore };
-    };
+    }, [quiz, answers]);
 
-    const handleSubmitQuiz = async () => {
+    const handleSubmitQuiz = useCallback(async () => {
         if (!quiz || !user) return;
 
         setIsSubmitting(true);
@@ -112,6 +84,34 @@ export default function QuizTaking({ quizId, onQuizComplete, onExit }: QuizTakin
         } finally {
             setIsSubmitting(false);
         }
+    }, [quiz, user, startTime, answers, onQuizComplete, calculateScore]);
+
+    useEffect(() => {
+        if (quiz?.duration) {
+            setTimeLeft(quiz.duration * 60); // Convert minutes to seconds
+        }
+    }, [quiz]);
+
+    useEffect(() => {
+        if (timeLeft === null) return;
+
+        if (timeLeft <= 0) {
+            handleSubmitQuiz();
+            return;
+        }
+
+        const timer = setInterval(() => {
+            setTimeLeft(prev => (prev ? prev - 1 : 0));
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [timeLeft, handleSubmitQuiz]);
+
+    const handleAnswerSelect = (questionId: string, answerId: string) => {
+        setAnswers(prev => ({
+            ...prev,
+            [questionId]: answerId,
+        }));
     };
 
     const formatTime = (seconds: number) => {

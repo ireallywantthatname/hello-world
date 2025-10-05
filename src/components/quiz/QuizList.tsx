@@ -51,16 +51,6 @@ export default function QuizList({ onEditQuiz, onCreateNewQuiz }: QuizListProps)
         }
     };
 
-    const formatDate = (date: Date) => {
-        return new Intl.DateTimeFormat('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        }).format(date);
-    };
-
     if (isLoading) {
         return (
             <div className="flex justify-center items-center py-12">

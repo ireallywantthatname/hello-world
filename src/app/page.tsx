@@ -17,7 +17,7 @@ import { Quiz, QuizAttempt, CrosswordAttempt, CrosswordPuzzle } from "@/types";
 import { getQuiz, getCrosswordPuzzle } from "@/actions/firebaseActions";
 
 function AppContent() {
-  const { user, login, logout, isLoading } = useAuth();
+  const { user, login, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState("quizzes");
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
