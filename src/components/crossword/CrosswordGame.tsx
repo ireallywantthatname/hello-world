@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { CrosswordPuzzle, CrosswordClue, CrosswordAttempt } from "@/types";
-import { getCrosswordPuzzle, submitCrosswordAttempt } from "@/actions/firebaseActions";
+import { getCrosswordPuzzle, submitCrosswordAttempt, validateCrosswordAnswers } from "@/actions/firebaseActions";
 import { useAuth } from "@/contexts/AuthContext";
-import { createCrosswordGrid, getClueNumbers } from "@/data/crosswordData";
+import { createCrosswordGridWithAnswers, getClueNumbers } from "@/data/crosswordData";
 
 interface CrosswordGameProps {
   puzzleId: string;
@@ -17,6 +17,8 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [startTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [correctAnswers, setCorrectAnswers] = useState<Record<string, boolean>>({});
+  const [grid, setGrid] = useState<(string | null)[][]>([]);
   const { user } = useAuth();
 
   const loadPuzzle = useCallback(async () => {
@@ -40,6 +42,14 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
     loadPuzzle();
   }, [loadPuzzle]);
 
+  // Update grid when puzzle or userAnswers change
+  useEffect(() => {
+    if (puzzle) {
+      const newGrid = createCrosswordGridWithAnswers(puzzle, userAnswers);
+      setGrid(newGrid);
+    }
+  }, [puzzle, userAnswers]);
+
   const handleAnswerChange = (clueId: string, answer: string) => {
     setUserAnswers(prev => ({
       ...prev,
@@ -47,28 +57,17 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
     }));
   };
 
-  const calculateScore = () => {
+  const calculateScore = async () => {
     if (!puzzle) return { score: 0, maxScore: 0, isComplete: false };
 
-    let score = 0;
-    let correctAnswers = 0;
-    const maxScore = puzzle.clues.reduce((sum, clue) => sum + clue.points, 0);
-
-    puzzle.clues.forEach(clue => {
-      const userAnswer = userAnswers[clue.id];
-      if (userAnswer && userAnswer === clue.answer) {
-        score += clue.points;
-        correctAnswers++;
-      }
-    });
-
-    // Bonus points for completing the entire puzzle
-    const isComplete = correctAnswers === puzzle.clues.length;
-    if (isComplete) {
-      score += 5; // Extra 5 marks for complete puzzle
+    try {
+      const validation = await validateCrosswordAnswers(userAnswers);
+      setCorrectAnswers(validation.correctAnswers);
+      return validation;
+    } catch (error) {
+      console.error("Error validating answers:", error);
+      return { score: 0, maxScore: 0, isComplete: false };
     }
-
-    return { score, maxScore: maxScore + 5, isComplete };
   };
 
   const handleSubmit = async () => {
@@ -77,7 +76,7 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
     setIsSubmitting(true);
     const endTime = Date.now();
     const timeSpent = Math.floor((endTime - startTime) / 1000);
-    const { score, maxScore, isComplete } = calculateScore();
+    const { score, maxScore, isComplete } = await calculateScore();
 
     try {
       const attemptData = {
@@ -110,7 +109,6 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
     );
   }
 
-  const grid = createCrosswordGrid(puzzle);
   const numbers = getClueNumbers(puzzle);
   const acrossClues = puzzle.clues.filter(clue => clue.direction === 'across').sort((a, b) => a.number - b.number);
   const downClues = puzzle.clues.filter(clue => clue.direction === 'down').sort((a, b) => a.number - b.number);
@@ -200,9 +198,14 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
                     maxLength={clue.length}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm font-mono"
                   />
-                  {userAnswers[clue.id] && userAnswers[clue.id] === clue.answer && (
-                    <div className="text-black text-xs mt-1 flex items-center">
+                  {correctAnswers[clue.id] && (
+                    <div className="text-green-600 text-xs mt-1 flex items-center">
                       ✓ Correct!
+                    </div>
+                  )}
+                  {correctAnswers[clue.id] === false && userAnswers[clue.id] && (
+                    <div className="text-red-600 text-xs mt-1 flex items-center">
+                      ✗ Incorrect
                     </div>
                   )}
                 </div>
@@ -229,9 +232,14 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
                     maxLength={clue.length}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-sm font-mono"
                   />
-                  {userAnswers[clue.id] && userAnswers[clue.id] === clue.answer && (
-                    <div className="text-black text-xs mt-1 flex items-center">
+                  {correctAnswers[clue.id] && (
+                    <div className="text-green-600 text-xs mt-1 flex items-center">
                       ✓ Correct!
+                    </div>
+                  )}
+                  {correctAnswers[clue.id] === false && userAnswers[clue.id] && (
+                    <div className="text-red-600 text-xs mt-1 flex items-center">
+                      ✗ Incorrect
                     </div>
                   )}
                 </div>
@@ -239,20 +247,34 @@ export default function CrosswordGame({ puzzleId, onComplete, onExit }: Crosswor
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Action Buttons */}
           <div className="bg-white rounded-lg p-6">
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full bg-black text-white rounded-md py-3 px-6 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Puzzle"}
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  try {
+                    const validation = await validateCrosswordAnswers(userAnswers);
+                    setCorrectAnswers(validation.correctAnswers);
+                  } catch (error) {
+                    console.error("Error checking answers:", error);
+                  }
+                }}
+                className="w-full bg-gray-100 text-gray-800 rounded-md py-2 px-6 hover:bg-gray-200 transition-colors font-medium"
+              >
+                Check Answers
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="w-full bg-black text-white rounded-md py-3 px-6 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Puzzle"}
+              </button>
+            </div>
             <div className="mt-4 text-sm text-gray-400">
               <div className="flex justify-between">
                 <span>Correct answers:</span>
-                <span>{Object.values(userAnswers).filter((answer, index) =>
-                  answer === puzzle.clues[index]?.answer).length} / {puzzle.clues.length}</span>
+                <span>{Object.values(correctAnswers).filter(Boolean).length} / {puzzle.clues.length}</span>
               </div>
             </div>
           </div>

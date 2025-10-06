@@ -516,9 +516,9 @@ const CROSSWORD_ANSWERS: Record<string, string> = {
   across_9: "OCTOBER",
   across_11: "SOPHIA",
   down_1: "MACHINELEARNING",
-  down_4: "PREDICTOR",
+  down_4: "ANALYTICS",
   down_5: "TIMEMACHINE",
-  down_8: "JUKEBOX",
+  down_8: "MUSICAL",
   down_10: "CHATBOT",
   down_12: "PYTHON",
 };
@@ -526,20 +526,31 @@ const CROSSWORD_ANSWERS: Record<string, string> = {
 // Validate crossword answers server-side
 export async function validateCrosswordAnswers(
   userAnswers: Record<string, string>
-): Promise<{ score: number; correctAnswers: Record<string, boolean> }> {
+): Promise<{ score: number; maxScore: number; isComplete: boolean; correctAnswers: Record<string, boolean> }> {
   const correctAnswers: Record<string, boolean> = {};
   let score = 0;
+  let correctCount = 0;
+  const totalClues = Object.keys(CROSSWORD_ANSWERS).length;
 
   for (const [clueId, userAnswer] of Object.entries(userAnswers)) {
     const correctAnswer = CROSSWORD_ANSWERS[clueId];
     const isCorrect =
-      correctAnswer && userAnswer.toUpperCase() === correctAnswer;
+      correctAnswer && userAnswer.toUpperCase().trim() === correctAnswer;
 
     correctAnswers[clueId] = Boolean(isCorrect);
     if (isCorrect) {
       score += 5; // 5 points per correct answer
+      correctCount++;
     }
   }
 
-  return { score, correctAnswers };
+  // Bonus points for completing the entire puzzle
+  const isComplete = correctCount === totalClues;
+  if (isComplete) {
+    score += 5; // Extra 5 marks for complete puzzle
+  }
+
+  const maxScore = totalClues * 5 + 5; // 5 points per clue + 5 bonus for completion
+
+  return { score, maxScore, isComplete, correctAnswers };
 }
