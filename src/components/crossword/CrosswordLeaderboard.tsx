@@ -1,26 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CrosswordLeaderboardEntry } from "@/types";
 import { getCrosswordLeaderboard } from "@/actions/firebaseActions";
 
-export default function CrosswordLeaderboard() {
+interface CrosswordLeaderboardProps {
+  refreshTrigger?: number;
+}
+
+export default function CrosswordLeaderboard({ refreshTrigger }: CrosswordLeaderboardProps = {}) {
   const [leaderboard, setLeaderboard] = useState<CrosswordLeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
-  useEffect(() => {
-    loadLeaderboard();
-
-    // Set up interval to refresh leaderboard every 30 seconds for realtime updates
-    const interval = setInterval(() => {
-      loadLeaderboard();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadLeaderboard = async () => {
+  const loadLeaderboard = useCallback(async () => {
     try {
       const data = await getCrosswordLeaderboard(20); // Get top 20 users
       setLeaderboard(data);
@@ -31,7 +24,25 @@ export default function CrosswordLeaderboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadLeaderboard();
+
+    // Set up interval to refresh leaderboard every 10 seconds for better realtime updates
+    const interval = setInterval(() => {
+      loadLeaderboard();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [loadLeaderboard]);
+
+  // Refresh when external trigger changes (e.g., when a new attempt is completed)
+  useEffect(() => {
+    if (refreshTrigger) {
+      loadLeaderboard();
+    }
+  }, [refreshTrigger, loadLeaderboard]);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -72,12 +83,23 @@ export default function CrosswordLeaderboard() {
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white overflow-hidden">
         <div className="bg-black p-6">
-          <h1 className="text-2xl font-bold text-white text-center">
-            Crossword Leaderboard
-          </h1>
-          <p className="text-purple-100 text-center mt-2">
-            IEEE Day 2025 Tech Challenge Champions
-          </p>
+          <div className="flex justify-between items-center">
+            <div className="flex-1 text-center">
+              <h1 className="text-2xl font-bold text-white">
+                Crossword Leaderboard
+              </h1>
+              <p className="text-purple-100 mt-2">
+                IEEE Day 2025 Tech Challenge Champions
+              </p>
+            </div>
+            <button
+              onClick={() => loadLeaderboard()}
+              className="bg-white text-black px-4 py-2 rounded-md hover:bg-gray-100 transition-colors text-sm font-medium"
+              disabled={isLoading}
+            >
+              {isLoading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -207,7 +229,7 @@ export default function CrosswordLeaderboard() {
 
             {/* Refresh indicator */}
             <div className="text-center mt-6 text-xs text-gray-400">
-              Updates automatically every 30 seconds
+              Updates automatically every 10 seconds
             </div>
           </div>
         )}

@@ -366,12 +366,13 @@ export async function getCrosswordPuzzle(
       createdAt: data.createdAt.toDate(),
     } as CrosswordPuzzle;
 
-      // Remove answers from clues before sending to client
-      puzzle.clues = puzzle.clues.map(clue => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { answer: _, ...clueWithoutAnswer } = clue;
-        return clueWithoutAnswer;
-      });    return puzzle;
+    // Remove answers from clues before sending to client
+    puzzle.clues = puzzle.clues.map((clue) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { answer: _, ...clueWithoutAnswer } = clue;
+      return clueWithoutAnswer;
+    });
+    return puzzle;
   } catch (e) {
     console.error("Error getting crossword puzzle:", e);
     return null;
@@ -392,7 +393,7 @@ export async function getAllCrosswordPuzzles(): Promise<CrosswordPuzzle[]> {
       } as CrosswordPuzzle;
 
       // Remove answers from clues before sending to client
-      puzzle.clues = puzzle.clues.map(clue => {
+      puzzle.clues = puzzle.clues.map((clue) => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { answer: _, ...clueWithoutAnswer } = clue;
         return clueWithoutAnswer;
@@ -434,7 +435,7 @@ export async function getCrosswordLeaderboard(
 ): Promise<CrosswordLeaderboardEntry[]> {
   try {
     const attemptsRef = collection(db, "crossword_attempts");
-    const usersRef = collection(db, "quiz_users");
+    const usersRef = collection(db, "users");
 
     const [attemptsSnapshot, usersSnapshot] = await Promise.all([
       getDocs(attemptsRef),
@@ -508,18 +509,18 @@ export async function getCrosswordLeaderboard(
 
 // Server-side crossword answers mapping - kept secure on server
 const CROSSWORD_ANSWERS: Record<string, string> = {
-  "across_2": "COMPUTERVISION",
-  "across_3": "IEEE",
-  "across_6": "CHATGPT",
-  "across_7": "REINFORCEMENT",
-  "across_9": "OCTOBER",
-  "across_11": "SOPHIA",
-  "down_1": "MACHINELEARNING",
-  "down_4": "PREDICTOR",
-  "down_5": "TIMEMACHINE",
-  "down_8": "JUKEBOX",
-  "down_10": "CHATBOT",
-  "down_12": "PYTHON",
+  across_2: "COMPUTERVISION",
+  across_3: "IEEE",
+  across_6: "CHATGPT",
+  across_7: "REINFORCEMENT",
+  across_9: "OCTOBER",
+  across_11: "SOPHIA",
+  down_1: "MACHINELEARNING",
+  down_4: "PREDICTOR",
+  down_5: "TIMEMACHINE",
+  down_8: "JUKEBOX",
+  down_10: "CHATBOT",
+  down_12: "PYTHON",
 };
 
 // Validate crossword answers server-side
@@ -531,8 +532,9 @@ export async function validateCrosswordAnswers(
 
   for (const [clueId, userAnswer] of Object.entries(userAnswers)) {
     const correctAnswer = CROSSWORD_ANSWERS[clueId];
-    const isCorrect = correctAnswer && userAnswer.toUpperCase() === correctAnswer;
-    
+    const isCorrect =
+      correctAnswer && userAnswer.toUpperCase() === correctAnswer;
+
     correctAnswers[clueId] = Boolean(isCorrect);
     if (isCorrect) {
       score += 5; // 5 points per correct answer

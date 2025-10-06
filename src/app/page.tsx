@@ -25,6 +25,7 @@ function AppContent() {
   const [quizResult, setQuizResult] = useState<{ attempt: QuizAttempt; quiz: Quiz } | null>(null);
   const [takingCrosswordId, setTakingCrosswordId] = useState<string | null>(null);
   const [crosswordResult, setCrosswordResult] = useState<{ attempt: CrosswordAttempt; puzzle: CrosswordPuzzle } | null>(null);
+  const [leaderboardRefreshTrigger, setLeaderboardRefreshTrigger] = useState<number>(0);
 
   if (isLoading) {
     return (
@@ -77,6 +78,8 @@ function AppContent() {
               setCrosswordResult({ attempt, puzzle });
             }
             setTakingCrosswordId(null);
+            // Trigger leaderboard refresh
+            setLeaderboardRefreshTrigger(prev => prev + 1);
           }}
           onExit={() => setTakingCrosswordId(null)}
         />
@@ -160,7 +163,7 @@ function AppContent() {
       case "leaderboard":
         return <Leaderboard />;
       case "crossword-leaderboard":
-        return <CrosswordLeaderboard />;
+        return <CrosswordLeaderboard refreshTrigger={leaderboardRefreshTrigger} />;
       default:
         return <QuizListForTaking onTakeQuiz={setTakingQuizId} />;
     }
