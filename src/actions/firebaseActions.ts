@@ -333,6 +333,107 @@ export async function getLeaderboard(
   }
 }
 
+export async function getQuizLeaderboard(
+  quizId: string,
+  limitCount: number = 10
+): Promise<LeaderboardEntry[]> {
+  try {
+    const attemptsRef = collection(db, "quiz_attempts");
+    const usersRef = collection(db, "users");
+    
+    // Filter attempts by specific quiz
+    const attemptsQuery = query(attemptsRef, where("quizId", "==", quizId));
+    
+    const [attemptsSnapshot, usersSnapshot] = await Promise.all([
+      getDocs(attemptsQuery),
+      getDocs(usersRef),
+    ]);
+
+    // Create user map
+    const users = new Map();
+    usersSnapshot.docs.forEach((doc) => {
+      users.set(doc.id, {
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    // Calculate user stats for this specific quiz
+    const userStats = new Map();
+
+    attemptsSnapshot.docs.forEach((doc) => {
+      const attemptData = doc.data();
+      const userId = attemptData.userId;
+      const completedAt =
+        attemptData.completedAt instanceof Timestamp
+          ? attemptData.completedAt.toDate()
+          : attemptData.completedAt;
+      const timeSpent = attemptData.timeSpent || 0;
+
+      if (!userStats.has(userId)) {
+        userStats.set(userId, {
+          bestScore: attemptData.score,
+          attempts: 1,
+          lastAttemptDate: completedAt,
+          bestQuizTime: timeSpent,
+        });
+      } else {
+        const stats = userStats.get(userId);
+        stats.attempts += 1;
+        
+        // Keep track of best score for this quiz
+        if (attemptData.score > stats.bestScore) {
+          stats.bestScore = attemptData.score;
+        }
+        
+        if (completedAt > stats.lastAttemptDate) {
+          stats.lastAttemptDate = completedAt;
+        }
+
+        // Track best (fastest) quiz time
+        if (timeSpent > 0 && (stats.bestQuizTime === 0 || timeSpent < stats.bestQuizTime)) {
+          stats.bestQuizTime = timeSpent;
+        }
+      }
+    });
+
+    // Create leaderboard entries
+    const leaderboard: LeaderboardEntry[] = [];
+
+    for (const [userId, stats] of userStats.entries()) {
+      const user = users.get(userId);
+      if (user) {
+        leaderboard.push({
+          userId,
+          userName: user.full_name,
+          email: user.email,
+          totalScore: stats.bestScore, // For individual quiz, show best score
+          quizzesCompleted: stats.attempts, // Number of attempts for this quiz
+          averageScore: stats.bestScore, // For individual quiz, same as best score
+          lastQuizDate: stats.lastAttemptDate,
+          bestQuizTime: stats.bestQuizTime,
+        });
+      }
+    }
+
+    // Sort by best score descending, then by best time ascending (faster is better)
+    return leaderboard
+      .sort((a, b) => {
+        if (b.totalScore !== a.totalScore) {
+          return b.totalScore - a.totalScore;
+        }
+        // If scores are equal, sort by time (faster is better)
+        if (a.bestQuizTime === 0) return 1;
+        if (b.bestQuizTime === 0) return -1;
+        return a.bestQuizTime - b.bestQuizTime;
+      })
+      .slice(0, limitCount);
+  } catch (e) {
+    console.error("Error getting quiz leaderboard:", e);
+    return [];
+  }
+}
+
 // Crossword Functions
 export async function createCrosswordPuzzle(
   puzzleData: Omit<CrosswordPuzzle, "id" | "createdAt">

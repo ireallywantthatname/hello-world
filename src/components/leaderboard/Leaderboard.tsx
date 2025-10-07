@@ -1,36 +1,66 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LeaderboardEntry } from "@/types";
-import { getLeaderboard } from "@/actions/firebaseActions";
+import { LeaderboardEntry, Quiz } from "@/types";
+import { getLeaderboard, getQuizLeaderboard, getAllQuizzes } from "@/actions/firebaseActions";
 
 export default function Leaderboard() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [selectedQuizId, setSelectedQuizId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    loadLeaderboard();
+    loadInitialData();
 
     // Set up interval to refresh leaderboard every 30 seconds for realtime updates
     const interval = setInterval(() => {
-      loadLeaderboard();
+      loadLeaderboard(selectedQuizId);
     }, 30000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedQuizId]);
 
-  const loadLeaderboard = async () => {
+  const loadInitialData = async () => {
     try {
-      const data = await getLeaderboard(20); // Get top 20 users
+      setIsLoading(true);
+      const [quizzesData] = await Promise.all([
+        getAllQuizzes(),
+      ]);
+      setQuizzes(quizzesData);
+      
+      // Load leaderboard for currently selected quiz (or all quizzes)
+      await loadLeaderboard(selectedQuizId);
+    } catch (err) {
+      setError("Failed to load data");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadLeaderboard = async (quizId: string | null) => {
+    try {
+      let data: LeaderboardEntry[];
+      if (quizId) {
+        data = await getQuizLeaderboard(quizId, 20);
+      } else {
+        data = await getLeaderboard(20); // Get top 20 users across all quizzes
+      }
       setLeaderboard(data);
       setError("");
     } catch (err) {
       setError("Failed to load leaderboard");
       console.error(err);
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  const handleTabChange = async (quizId: string | null) => {
+    setSelectedQuizId(quizId);
+    setIsLoading(true);
+    await loadLeaderboard(quizId);
+    setIsLoading(false);
   };
 
   const formatDate = (date: Date) => {
@@ -78,6 +108,8 @@ export default function Leaderboard() {
     );
   }
 
+  const selectedQuiz = quizzes.find(quiz => quiz.id === selectedQuizId);
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="bg-white overflow-hidden">
@@ -86,8 +118,42 @@ export default function Leaderboard() {
             Leaderboard
           </h1>
           <p className="text-blue-100 text-center mt-2">
-            Top performers across all quizzes
+            {selectedQuizId ? `Top performers for "${selectedQuiz?.title}"` : "Top performers across all quizzes"}
           </p>
+        </div>
+
+        {/* Quiz Tabs */}
+        <div className="bg-gray-50 border-b">
+          <div className="flex overflow-x-auto">
+            <button
+              onClick={() => handleTabChange(null)}
+              className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                selectedQuizId === null
+                  ? "border-black text-black bg-white"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              All Quizzes
+            </button>
+            {quizzes.filter(quiz => quiz.isActive).map((quiz) => (
+              <button
+                key={quiz.id}
+                onClick={() => handleTabChange(quiz.id)}
+                className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  selectedQuizId === quiz.id
+                    ? "border-black text-black bg-white"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {quiz.title}
+              </button>
+            ))}
+            {quizzes.filter(quiz => quiz.isActive).length === 0 && (
+              <div className="px-6 py-3 text-sm text-gray-400">
+                No active quizzes available
+              </div>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -98,8 +164,15 @@ export default function Leaderboard() {
 
         {leaderboard.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-400 text-lg mb-4">No quiz attempts yet</div>
-            <p className="text-gray-400">Be the first to complete a quiz and claim the top spot!</p>
+            <div className="text-gray-400 text-lg mb-4">
+              {selectedQuizId ? `No attempts for "${selectedQuiz?.title}" yet` : "No quiz attempts yet"}
+            </div>
+            <p className="text-gray-400">
+              {selectedQuizId 
+                ? "Be the first to complete this quiz and claim the top spot!" 
+                : "Be the first to complete a quiz and claim the top spot!"
+              }
+            </p>
           </div>
         ) : (
           <div className="p-6">
@@ -158,19 +231,19 @@ export default function Leaderboard() {
                       Player
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Total Score
+                      {selectedQuizId ? "Best Score" : "Total Score"}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Quizzes Completed
+                      {selectedQuizId ? "Attempts" : "Quizzes Completed"}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Average Score
+                      {selectedQuizId ? "Score" : "Average Score"}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Best Time
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Last Quiz
+                      {selectedQuizId ? "Last Attempt" : "Last Quiz"}
                     </th>
                   </tr>
                 </thead>
@@ -206,7 +279,7 @@ export default function Leaderboard() {
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm text-black">
-                            {entry.averageScore.toFixed(1)}
+                            {selectedQuizId ? entry.totalScore : entry.averageScore.toFixed(1)}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
