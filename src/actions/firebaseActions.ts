@@ -253,7 +253,7 @@ export async function getLeaderboard(
     // This is a simplified version - in a real app, you might want to use a cloud function
     // to calculate leaderboard data more efficiently
     const attemptsRef = collection(db, "quiz_attempts");
-    const usersRef = collection(db, "quiz_users");
+    const usersRef = collection(db, "users");
 
     const [attemptsSnapshot, usersSnapshot] = await Promise.all([
       getDocs(attemptsRef),
