@@ -4,28 +4,28 @@ import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/auth/LoginForm";
 import Navigation from "@/components/layout/Navigation";
-import QuizList from "@/components/quiz/QuizList";
-import QuizForm from "@/components/quiz/QuizForm";
+// import QuizList from "@/components/quiz/QuizList";
+// import QuizForm from "@/components/quiz/QuizForm";
 import QuizTaking from "@/components/quiz/QuizTaking";
 import QuizResults from "@/components/quiz/QuizResults";
 import Leaderboard from "@/components/leaderboard/Leaderboard";
-import CrosswordList from "@/components/crossword/CrosswordList";
-import CrosswordGame from "@/components/crossword/CrosswordGame";
-import CrosswordResults from "@/components/crossword/CrosswordResults";
-import CrosswordLeaderboard from "@/components/crossword/CrosswordLeaderboard";
-import { Quiz, QuizAttempt, CrosswordAttempt, CrosswordPuzzle } from "@/types";
-import { getQuiz, getCrosswordPuzzle } from "@/actions/firebaseActions";
+// import CrosswordList from "@/components/crossword/CrosswordList";
+// import CrosswordGame from "@/components/crossword/CrosswordGame";
+// import CrosswordResults from "@/components/crossword/CrosswordResults";
+// import CrosswordLeaderboard from "@/components/crossword/CrosswordLeaderboard";
+import { Quiz, QuizAttempt /* , CrosswordAttempt, CrosswordPuzzle */ } from "@/types";
+import { getQuiz /* , getCrosswordPuzzle */ } from "@/actions/firebaseActions";
 
 function AppContent() {
   const { user, login, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState("quizzes");
-  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
-  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
+  // const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  // const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
   const [takingQuizId, setTakingQuizId] = useState<string | null>(null);
   const [quizResult, setQuizResult] = useState<{ attempt: QuizAttempt; quiz: Quiz } | null>(null);
-  const [takingCrosswordId, setTakingCrosswordId] = useState<string | null>(null);
-  const [crosswordResult, setCrosswordResult] = useState<{ attempt: CrosswordAttempt; puzzle: CrosswordPuzzle } | null>(null);
-  const [leaderboardRefreshTrigger, setLeaderboardRefreshTrigger] = useState<number>(0);
+  // const [takingCrosswordId, setTakingCrosswordId] = useState<string | null>(null);
+  // const [crosswordResult, setCrosswordResult] = useState<{ attempt: CrosswordAttempt; puzzle: CrosswordPuzzle } | null>(null);
+  // const [leaderboardRefreshTrigger, setLeaderboardRefreshTrigger] = useState<number>(0);
 
   if (isLoading) {
     return (
@@ -44,48 +44,48 @@ function AppContent() {
   }
 
   // Handle crossword results
-  if (crosswordResult) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Navigation currentView={currentView} onViewChange={setCurrentView} />
-        <div className="py-8">
-          <CrosswordResults
-            attempt={crosswordResult.attempt}
-            puzzle={crosswordResult.puzzle}
-            onGoToLeaderboard={() => {
-              setCrosswordResult(null);
-              setCurrentView("crossword-leaderboard");
-            }}
-            onTryAgain={() => {
-              setCrosswordResult(null);
-              setCurrentView("crossword");
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
+  // if (crosswordResult) {
+  //   return (
+  //     <div className="min-h-screen bg-white">
+  //       <Navigation currentView={currentView} onViewChange={setCurrentView} />
+  //       <div className="py-8">
+  //         <CrosswordResults
+  //           attempt={crosswordResult.attempt}
+  //           puzzle={crosswordResult.puzzle}
+  //           onGoToLeaderboard={() => {
+  //             setCrosswordResult(null);
+  //             setCurrentView("crossword-leaderboard");
+  //           }}
+  //           onTryAgain={() => {
+  //             setCrosswordResult(null);
+  //             setCurrentView("crossword");
+  //           }}
+  //         />
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Handle crossword taking
-  if (takingCrosswordId) {
-    return (
-      <div className="min-h-screen bg-white">
-        <CrosswordGame
-          puzzleId={takingCrosswordId}
-          onComplete={async (attempt: CrosswordAttempt) => {
-            const puzzle = await getCrosswordPuzzle(attempt.puzzleId);
-            if (puzzle) {
-              setCrosswordResult({ attempt, puzzle });
-            }
-            setTakingCrosswordId(null);
-            // Trigger leaderboard refresh
-            setLeaderboardRefreshTrigger(prev => prev + 1);
-          }}
-          onExit={() => setTakingCrosswordId(null)}
-        />
-      </div>
-    );
-  }
+  // if (takingCrosswordId) {
+  //   return (
+  //     <div className="min-h-screen bg-white">
+  //       <CrosswordGame
+  //         puzzleId={takingCrosswordId}
+  //         onComplete={async (attempt: CrosswordAttempt) => {
+  //           const puzzle = await getCrosswordPuzzle(attempt.puzzleId);
+  //           if (puzzle) {
+  //             setCrosswordResult({ attempt, puzzle });
+  //           }
+  //           setTakingCrosswordId(null);
+  //           // Trigger leaderboard refresh
+  //           setLeaderboardRefreshTrigger(prev => prev + 1);
+  //         }}
+  //         onExit={() => setTakingCrosswordId(null)}
+  //       />
+  //     </div>
+  //   );
+  // }
 
   // Handle quiz results
   if (quizResult) {
@@ -130,40 +130,40 @@ function AppContent() {
   }
 
   // Handle quiz creation/editing
-  if (isCreatingQuiz) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Navigation currentView={currentView} onViewChange={setCurrentView} />
-        <div className="py-8">
-          <QuizForm
-            onQuizCreated={() => {
-              setIsCreatingQuiz(false);
-              setCurrentView("manage");
-            }}
-            onCancel={() => setIsCreatingQuiz(false)}
-          />
-        </div>
-      </div>
-    );
-  }
+  // if (isCreatingQuiz) {
+  //   return (
+  //     <div className="min-h-screen bg-white">
+  //       <Navigation currentView={currentView} onViewChange={setCurrentView} />
+  //       <div className="py-8">
+  //         <QuizForm
+  //           onQuizCreated={() => {
+  //             setIsCreatingQuiz(false);
+  //             setCurrentView("manage");
+  //           }}
+  //           onCancel={() => setIsCreatingQuiz(false)}
+  //         />
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   const renderContent = () => {
     switch (currentView) {
       case "quizzes":
         return <QuizListForTaking onTakeQuiz={setTakingQuizId} />;
-      case "crossword":
-        return <CrosswordList onStartPuzzle={setTakingCrosswordId} />;
-      case "manage":
-        return (
-          <QuizList
-            onEditQuiz={setSelectedQuiz}
-            onCreateNewQuiz={() => setIsCreatingQuiz(true)}
-          />
-        );
+      // case "crossword":
+      //   return <CrosswordList onStartPuzzle={setTakingCrosswordId} />;
+      // case "manage":
+      //   return (
+      //     <QuizList
+      //       onEditQuiz={setSelectedQuiz}
+      //       onCreateNewQuiz={() => setIsCreatingQuiz(true)}
+      //     />
+      //   );
       case "leaderboard":
         return <Leaderboard />;
-      case "crossword-leaderboard":
-        return <CrosswordLeaderboard refreshTrigger={leaderboardRefreshTrigger} />;
+      // case "crossword-leaderboard":
+      //   return <CrosswordLeaderboard refreshTrigger={leaderboardRefreshTrigger} />;
       default:
         return <QuizListForTaking onTakeQuiz={setTakingQuizId} />;
     }

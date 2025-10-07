@@ -12,10 +12,10 @@ export default function Navigation({ currentView, onViewChange }: NavigationProp
 
     const navItems = [
         { id: 'quizzes', label: 'Take Quizzes' },
-        { id: 'crossword', label: 'Crossword Puzzle' },
-        { id: 'manage', label: 'Manage Quizzes' },
+        // { id: 'crossword', label: 'Crossword Puzzle' },
+        // { id: 'manage', label: 'Manage Quizzes' },
         { id: 'leaderboard', label: 'Quiz Leaderboard' },
-        { id: 'crossword-leaderboard', label: 'Crossword Leaderboard' },
+        // { id: 'crossword-leaderboard', label: 'Crossword Leaderboard' },
     ];
 
     return (
