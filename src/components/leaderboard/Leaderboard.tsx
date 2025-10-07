@@ -41,6 +41,16 @@ export default function Leaderboard() {
     }).format(date);
   };
 
+  const formatTime = (seconds: number) => {
+    if (seconds === 0) return "N/A";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+    return `${remainingSeconds}s`;
+  };
+
   const getRankBadge = (position: number) => {
     return position.toString();
   };
@@ -106,6 +116,7 @@ export default function Leaderboard() {
                       <div className="text-2xl mb-1">2</div>
                       <div className="font-bold text-sm">{leaderboard[1].userName}</div>
                       <div className="text-xs opacity-90">{leaderboard[1].totalScore} pts</div>
+                      <div className="text-xs opacity-75">⏱️ {formatTime(leaderboard[1].bestQuizTime)}</div>
                     </div>
                     <div className="text-xs text-gray-400">2nd Place</div>
                   </div>
@@ -116,6 +127,7 @@ export default function Leaderboard() {
                       <div className="text-3xl mb-2">👑</div>
                       <div className="font-bold">{leaderboard[0].userName}</div>
                       <div className="text-sm opacity-90">{leaderboard[0].totalScore} pts</div>
+                      <div className="text-xs opacity-75">⏱️ {formatTime(leaderboard[0].bestQuizTime)}</div>
                     </div>
                     <div className="text-sm font-medium text-black">Champion</div>
                   </div>
@@ -126,6 +138,7 @@ export default function Leaderboard() {
                       <div className="text-2xl mb-1">3</div>
                       <div className="font-bold text-sm">{leaderboard[2].userName}</div>
                       <div className="text-xs opacity-90">{leaderboard[2].totalScore} pts</div>
+                      <div className="text-xs opacity-75">⏱️ {formatTime(leaderboard[2].bestQuizTime)}</div>
                     </div>
                     <div className="text-xs text-gray-400">3rd Place</div>
                   </div>
@@ -152,6 +165,9 @@ export default function Leaderboard() {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Average Score
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                      Best Time
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       Last Quiz
@@ -191,6 +207,11 @@ export default function Leaderboard() {
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm text-black">
                             {entry.averageScore.toFixed(1)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-black font-medium">
+                            ⏱️ {formatTime(entry.bestQuizTime)}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">

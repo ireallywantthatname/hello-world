@@ -279,12 +279,14 @@ export async function getLeaderboard(
         attemptData.completedAt instanceof Timestamp
           ? attemptData.completedAt.toDate()
           : attemptData.completedAt;
+      const timeSpent = attemptData.timeSpent || 0;
 
       if (!userStats.has(userId)) {
         userStats.set(userId, {
           totalScore: 0,
           quizzesCompleted: 0,
           lastQuizDate: completedAt,
+          bestQuizTime: timeSpent,
         });
       }
 
@@ -294,6 +296,11 @@ export async function getLeaderboard(
 
       if (completedAt > stats.lastQuizDate) {
         stats.lastQuizDate = completedAt;
+      }
+
+      // Track best (fastest) quiz time
+      if (timeSpent > 0 && (stats.bestQuizTime === 0 || timeSpent < stats.bestQuizTime)) {
+        stats.bestQuizTime = timeSpent;
       }
     });
 
@@ -311,6 +318,7 @@ export async function getLeaderboard(
           quizzesCompleted: stats.quizzesCompleted,
           averageScore: stats.totalScore / stats.quizzesCompleted,
           lastQuizDate: stats.lastQuizDate,
+          bestQuizTime: stats.bestQuizTime,
         });
       }
     }
@@ -461,12 +469,14 @@ export async function getCrosswordLeaderboard(
         attemptData.completedAt instanceof Timestamp
           ? attemptData.completedAt.toDate()
           : attemptData.completedAt;
+      const timeSpent = attemptData.timeSpent || 0;
 
       if (!userStats.has(userId)) {
         userStats.set(userId, {
           totalScore: 0,
           puzzlesCompleted: 0,
           lastPuzzleDate: completedAt,
+          bestPuzzleTime: timeSpent,
         });
       }
 
@@ -476,6 +486,11 @@ export async function getCrosswordLeaderboard(
 
       if (completedAt > stats.lastPuzzleDate) {
         stats.lastPuzzleDate = completedAt;
+      }
+
+      // Track best (fastest) puzzle time
+      if (timeSpent > 0 && (stats.bestPuzzleTime === 0 || timeSpent < stats.bestPuzzleTime)) {
+        stats.bestPuzzleTime = timeSpent;
       }
     });
 
@@ -493,6 +508,7 @@ export async function getCrosswordLeaderboard(
           puzzlesCompleted: stats.puzzlesCompleted,
           averageScore: stats.totalScore / stats.puzzlesCompleted,
           lastPuzzleDate: stats.lastPuzzleDate,
+          bestPuzzleTime: stats.bestPuzzleTime,
         });
       }
     }

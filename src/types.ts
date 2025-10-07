@@ -94,6 +94,7 @@ export interface LeaderboardEntry {
   quizzesCompleted: number;
   averageScore: number;
   lastQuizDate: Date;
+  bestQuizTime: number; // best (fastest) completion time in seconds
 }
 
 // Quiz form schemas
@@ -165,4 +166,5 @@ export interface CrosswordLeaderboardEntry {
   puzzlesCompleted: number;
   averageScore: number;
   lastPuzzleDate: Date;
+  bestPuzzleTime: number; // best (fastest) completion time in seconds
 }
